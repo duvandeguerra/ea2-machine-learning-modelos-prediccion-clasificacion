@@ -1,6 +1,7 @@
 from src.data_loader import HFDatasetLoader
 from src.preprocessing import DataPreprocessor, TARGET_CLF, PAY_COLS, BILL_COLS, PAY_AMT_COLS
 from src.regression_model import RegressionModel
+from src.classification_model import ClassificationModel
 
 DATASET_ID = "scikit-learn/credit-card-clients"
 
@@ -66,6 +67,20 @@ def main():
     print(f"\nIntercepto: {reg.intercept:,.0f} NT$")
     print("\nCoeficientes (ordenados por magnitud):")
     print(reg.coefficients().to_string(index=False, float_format=lambda x: f"{x:,.0f}"))
+
+    # ---------- CLASIFICACIÓN ----------
+    print("\n" + "=" * 60 + "\nCLASIFICACIÓN: predecir incumplimiento (default)\n" + "=" * 60)
+    clf = ClassificationModel(random_state=42)
+    clf.train(train)
+    mc = clf.evaluate(test)
+
+    print("Parámetros:", clf.params)
+    print("\nMatriz de confusión:\n", clf.confusion_df().to_string())
+    print("\nReporte por clase:\n", clf.reporte)
+    print(f"Exactitud: {mc['accuracy']:.3f}  (baseline 'nadie incumple': {mc['accuracy_baseline']:.3f})")
+    print(f"ROC AUC:   {mc['roc_auc']:.3f}")
+    print("\nCoeficientes (top 10 por magnitud):")
+    print(clf.coefficients().head(10).to_string(index=False, float_format=lambda x: f"{x:.3f}"))
 
 if __name__ == "__main__":
     main()
