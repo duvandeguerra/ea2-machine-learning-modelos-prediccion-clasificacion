@@ -1,5 +1,6 @@
 from src.data_loader import HFDatasetLoader
 from src.preprocessing import DataPreprocessor, TARGET_CLF, PAY_COLS, BILL_COLS, PAY_AMT_COLS
+from src.regression_model import RegressionModel
 
 DATASET_ID = "scikit-learn/credit-card-clients"
 
@@ -52,6 +53,19 @@ def main():
     for op in prep.operaciones:
         print(" -", op)
 
+    # ---------- REGRESIÓN LINEAL ----------
+    print("\n" + "=" * 60 + "\nREGRESIÓN LINEAL: predecir LIMIT_BAL\n" + "=" * 60)
+    reg = RegressionModel()
+    reg.train(train)
+    m = reg.evaluate(test)
+
+    print("Parámetros:", reg.params)
+    print(f"\nMAE:  {m['MAE']:,.0f} NT$   (baseline media: {m['MAE_baseline']:,.0f} NT$)")
+    print(f"RMSE: {m['RMSE']:,.0f} NT$")
+    print(f"R²:   {m['R2']:.3f}")
+    print(f"\nIntercepto: {reg.intercept:,.0f} NT$")
+    print("\nCoeficientes (ordenados por magnitud):")
+    print(reg.coefficients().to_string(index=False, float_format=lambda x: f"{x:,.0f}"))
 
 if __name__ == "__main__":
     main()

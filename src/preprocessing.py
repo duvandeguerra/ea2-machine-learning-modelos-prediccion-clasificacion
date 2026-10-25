@@ -78,9 +78,13 @@ class DataPreprocessor:
         return train, test
 
     @staticmethod
-    def build_transformer(numericas: list[str]) -> ColumnTransformer:
+    def build_transformer(numericas: list[str], drop_first: bool = False) -> ColumnTransformer:
         """Pasos que aprenden de los datos: se ajustan dentro del Pipeline solo con train."""
+        encoder = OneHotEncoder(
+            drop="first" if drop_first else None,
+            handle_unknown="ignore",
+        )
         return ColumnTransformer([
             ("num", StandardScaler(), numericas),
-            ("cat", OneHotEncoder(handle_unknown="ignore"), CATEGORICAS),
+            ("cat", encoder, CATEGORICAS),
         ])
