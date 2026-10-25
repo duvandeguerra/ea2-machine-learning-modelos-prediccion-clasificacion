@@ -2,6 +2,7 @@ from src.data_loader import HFDatasetLoader
 from src.preprocessing import DataPreprocessor, TARGET_CLF, PAY_COLS, BILL_COLS, PAY_AMT_COLS
 from src.regression_model import RegressionModel
 from src.classification_model import ClassificationModel
+from src.report import ReportGenerator
 
 DATASET_ID = "scikit-learn/credit-card-clients"
 
@@ -81,6 +82,22 @@ def main():
     print(f"ROC AUC:   {mc['roc_auc']:.3f}")
     print("\nCoeficientes (top 10 por magnitud):")
     print(clf.coefficients().head(10).to_string(index=False, float_format=lambda x: f"{x:.3f}"))
+
+    # ---------- RESUMEN .TXT ----------
+    reporte = ReportGenerator(
+        dataset_id=DATASET_ID,
+        split="train",
+        forma_inicial=df.shape,
+        forma_final=df_limpio.shape,
+        operaciones=prep.operaciones,
+        n_train=len(train),
+        n_test=len(test),
+        reg=reg,
+        clf=clf,
+        datos=train,
+    )
+    ruta = reporte.save("outputs/resumen_modelos.txt")
+    print(f"\nResumen guardado en: {ruta}")
 
 if __name__ == "__main__":
     main()

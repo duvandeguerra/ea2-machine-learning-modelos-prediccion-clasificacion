@@ -1,0 +1,125 @@
+======================================================================
+RESUMEN AUTOMÁTICO - MODELOS DE REGRESIÓN Y CLASIFICACIÓN
+======================================================================
+Fecha de ejecución: 2026-10-25 17:54:45
+
+1. DATASET
+----------------------------------------------------------------------
+Identificador: scikit-learn/credit-card-clients
+Enlace: https://huggingface.co/datasets/scikit-learn/credit-card-clients
+Split: train
+Contenido: clientes de tarjetas de crédito en Taiwán (abr-sep 2005): cupo,
+datos demográficos, historial de pagos, facturas, pagos e incumplimiento.
+Dimensiones originales: 30000 filas x 25 columnas
+
+2. PREPROCESAMIENTO
+----------------------------------------------------------------------
+- Se eliminó ID (identificador sin valor predictivo).
+- Se eliminaron 35 filas duplicadas (detectadas sin ID).
+- Se eliminó SEX: usar el género en decisiones de crédito es discriminatorio.
+- EDUCATION: 345 valores 0/5/6 agrupados en 4 (otros). MARRIAGE: 54 valores 0 agrupados en 3 (otros).
+- Montos (LIMIT_BAL, BILL_AMT, PAY_AMT) unificados a float.
+- Nueva variable meses_con_retraso: meses (de 6) con PAY_x > 0.
+- Filas: 30000 -> 29965. Columnas finales: 24.
+- División train/test 80/20, random_state=42, estratificada por default: 23972 train, 5993 test.
+- En Pipeline (ajustado solo con train): StandardScaler para numéricas y
+  OneHotEncoder para EDUCATION y MARRIAGE.
+Dimensiones finales: 29965 filas x 24 columnas
+
+3. MODELO DE REGRESIÓN LINEAL
+----------------------------------------------------------------------
+Objetivo: estimar el cupo de crédito asignado a un cliente según su perfil.
+Variable objetivo: LIMIT_BAL (NT$)
+Variables predictoras (22): AGE, PAY_0, PAY_2, PAY_3, PAY_4, PAY_5, PAY_6, BILL_AMT1, BILL_AMT2, BILL_AMT3, BILL_AMT4, BILL_AMT5, BILL_AMT6, PAY_AMT1, PAY_AMT2, PAY_AMT3, PAY_AMT4, PAY_AMT5, PAY_AMT6, meses_con_retraso, EDUCATION, MARRIAGE
+Excluidas: default (información futura), SEX (ética), ID.
+Algoritmo: LinearRegression (mínimos cuadrados ordinarios).
+Parámetros (predeterminados): {'copy_X': True, 'fit_intercept': True, 'n_jobs': None, 'positive': False, 'tol': 1e-06}
+Codificación: OneHotEncoder drop='first' (referencia: EDUCATION=1 posgrado, MARRIAGE=1 casado).
+Entrenamiento / prueba: 23972 / 5993 filas.
+
+Métricas (conjunto de prueba):
+  MAE:  76,651 NT$   (baseline media: 104,827 NT$)
+  RMSE: 100,927 NT$
+  R2:   0.391
+  Intercepto: 209,942 NT$
+
+Coeficientes principales (por desviación estándar, o diferencia vs. categoría de referencia):
+              variable  coeficiente
+      cat__EDUCATION_3      -67,624
+       cat__MARRIAGE_3      -51,339
+      cat__EDUCATION_4      -47,129
+      cat__EDUCATION_2      -45,717
+        num__BILL_AMT1       30,621
+num__meses_con_retraso       22,716
+            num__PAY_2      -20,093
+            num__PAY_0      -17,967
+
+Interpretación:
+  El modelo reduce el error absoluto medio un 27% frente a predecir siempre la media
+  y explica el 39% de la variación del cupo. El RMSE es 1.32 veces el MAE,
+  lo que indica errores grandes en algunos clientes (probablemente con cupos altos).
+  Frente a posgrado, las demás categorías educativas tienen un cupo estimado menor
+  (universidad -45,717, bachillerato -67,624, otros -47,129 NT$). 6 de 6 coeficientes PAY_x son negativos
+  (más retraso, menor cupo estimado).
+
+4. MODELO DE CLASIFICACIÓN
+----------------------------------------------------------------------
+Objetivo: predecir si un cliente incumplirá el pago el próximo mes.
+Variable objetivo: default (0 = No incumple, 1 = Incumple)
+Variables predictoras (23): LIMIT_BAL, AGE, PAY_0, PAY_2, PAY_3, PAY_4, PAY_5, PAY_6, BILL_AMT1, BILL_AMT2, BILL_AMT3, BILL_AMT4, BILL_AMT5, BILL_AMT6, PAY_AMT1, PAY_AMT2, PAY_AMT3, PAY_AMT4, PAY_AMT5, PAY_AMT6, meses_con_retraso, EDUCATION, MARRIAGE
+Algoritmo: LogisticRegression. Elegido por ser interpretable (odds ratios),
+entregar probabilidades y ser la referencia estándar en clasificación binaria.
+Parámetros: {'C': 1.0, 'class_weight': 'balanced', 'dual': False, 'fit_intercept': True, 'intercept_scaling': 1, 'l1_ratio': 0.0, 'max_iter': 1000, 'n_jobs': None, 'penalty': 'deprecated', 'random_state': 42, 'solver': 'lbfgs', 'tol': 0.0001, 'verbose': 0, 'warm_start': False}
+class_weight='balanced' compensa el desbalance de clases; max_iter=1000 asegura
+convergencia; C=1.0 y regularización L2 son los valores predeterminados.
+Entrenamiento / prueba: 23972 / 5993 filas (estratificado).
+
+Matriz de confusión (conjunto de prueba):
+                   Pred: No incumple  Pred: Incumple
+Real: No incumple               3834             833
+Real: Incumple                   574             752
+
+Reporte por clase:
+              precision    recall  f1-score   support
+
+ No incumple      0.870     0.822     0.845      4667
+    Incumple      0.474     0.567     0.517      1326
+
+    accuracy                          0.765      5993
+   macro avg      0.672     0.694     0.681      5993
+weighted avg      0.782     0.765     0.772      5993
+
+Exactitud: 0.765   (baseline 'nadie incumple': 0.779)
+ROC AUC:   0.749
+
+Coeficientes principales (odds ratio > 1 aumenta el riesgo, < 1 lo reduce):
+              variable  coeficiente  odds_ratio
+num__meses_con_retraso        0.901       2.461
+      cat__EDUCATION_4       -0.725       0.484
+        num__BILL_AMT2        0.293       1.340
+            num__PAY_0        0.288       1.334
+        num__LIMIT_BAL       -0.244       0.783
+         num__PAY_AMT1       -0.192       0.825
+        num__BILL_AMT1       -0.186       0.831
+      cat__EDUCATION_2        0.178       1.194
+
+Interpretación:
+  Por el desbalance de clases, se priorizan el recall y el F1 de 'Incumple' sobre la exactitud:
+  un modelo que nunca predice incumplimiento logra una exactitud alta pero no detecta riesgos.
+  El modelo detecta 752 de 1326 incumplimientos (recall 56.7%) y
+  no detecta 574. Genera 833 falsas alarmas; de sus alertas, el 47.4% son correctas.
+  ROC AUC de 0.749: capacidad de discriminación aceptable.
+
+5. CONCLUSIONES Y LIMITACIONES
+----------------------------------------------------------------------
+- Variable numérica más influyente: regresión -> BILL_AMT1; clasificación -> meses_con_retraso.
+- Multicolinealidad: correlación máxima entre meses_con_retraso y PAY_x = 0.66;
+  entre BILL_AMT de distintos meses, entre 0.80 y 0.96.
+  Por eso sus coeficientes individuales no deben interpretarse por separado.
+- Regresión: el 61% de la variación del cupo queda sin explicar,
+  atribuible a variables ausentes del dataset (ingresos, patrimonio). Además, el cupo
+  limita la factura, por lo que BILL_AMT refleja en parte causalidad inversa.
+- Clasificación: con umbral 0.5 no se detecta el 43% de los incumplimientos
+  (574 clientes); ajustar el umbral o probar modelos no lineales podría mejorar el recall.
+- Datos de Taiwán (2005): la generalización a otros mercados o épocas no está garantizada.
+- SEX se excluyó por consideraciones éticas de no discriminación.
