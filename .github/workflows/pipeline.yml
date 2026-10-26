@@ -1,0 +1,33 @@
+name: Pipeline ML - Regresión y Clasificación
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  entrenar-modelos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar flujo completo (carga, preprocesamiento, modelos, resumen)
+        run: python main.py
+
+      - name: Publicar resumen como artefacto descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: resumen-modelos
+          path: outputs/resumen_modelos.txt
+          if-no-files-found: error
